@@ -289,7 +289,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         await bili23.send(make_node_segment(bot.self_id, favs))
         return
     # 获取视频信息
-    will_delete_id = await bot.send(event, f"\n{GLOBAL_NICKNAME}识别到B站视频, 解析中...")
+    will_delete_id = await bot.send(event, f"{GLOBAL_NICKNAME}识别到B站视频, 解析中...")
     video_id = re.search(r"video\/[^\?\/ ]+", url)[0].split('/')[1]
     v = video.Video(video_id, credential=credential)
     video_info = await v.get_info()
@@ -322,10 +322,9 @@ async def bilibili(bot: Bot, event: Event) -> None:
     online = await v.get_online()
     online_str = f'🏄‍♂️ 总共 {online["total"]} 人在观看，{online["count"]} 人在网页端观看'
     if video_duration <= VIDEO_DURATION_MAXIMUM:
-        nodes.append(make_node_segment(Message(MessageSegment.image(video_cover)) + Message(
-            f"\n{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}")))
+        nodes.append(make_node_segment(bot.self_id,[MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}")]))
     else:
-        await send_forward_both(bot, event, make_node_segment(Message(MessageSegment.image(video_cover)) + Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")))
+        await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
         return
     # 获取下载链接
     logger.info(page_num)
@@ -350,7 +349,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
     if BILI_SESSDATA != '':
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
         if ai_conclusion['model_result']['summary'] != '':
-            nodes.append(make_node_segment(bot.self_id, ["bilibili AI总结", ai_conclusion['model_result']['summary']]))
+            nodes.append((bot.self_id, ["bilibili AI总结", ai_conclusion['model_result']['summary']]))
     await send_forward_both(bot, event, nodes)
     await bot.delete_msg(message_id=will_delete_id)
 
