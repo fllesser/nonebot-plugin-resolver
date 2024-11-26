@@ -203,7 +203,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
     :return:
     """
     # 所有消息
-    nodes = [make_node_segment(bot.self_id, "test")]
+    all_seg = []
     # 最后要撤回的消息 id
     will_delete_id = 0
 
@@ -322,8 +322,8 @@ async def bilibili(bot: Bot, event: Event) -> None:
     online = await v.get_online()
     online_str = f'🏄‍♂️ 总共 {online["total"]} 人在观看，{online["count"]} 人在网页端观看'
     if video_duration <= VIDEO_DURATION_MAXIMUM:
-        nodes.append(make_node_segment(bot.self_id,[MessageSegment.image(video_cover))
-        nodes.append(make_node_segment(bot.self_id,Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}")))
+        all_seg.append(MessageSegment.image(video_cover))
+        all_seg.append(Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
     else:
         await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
         await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
@@ -347,14 +347,14 @@ async def bilibili(bot: Bot, event: Event) -> None:
         remove_res = remove_files([f"{video_id}-video.m4s", f"{video_id}-audio.m4s"])
         logger.info(remove_res)
     # 放入 segs
-    nodes.append(make_node_segment(bot.self_id, await get_video_seg(f'{path}-res.mp4')))
     data_path = f"{path}-res.mp4"
+    all_seg.append(await get_video_seg(f'{path}-res.mp4'))
     # 这里是总结内容，如果写了cookie就可以
     if BILI_SESSDATA != '':
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
         if ai_conclusion['model_result']['summary'] != '':
-            nodes.append(make_node_segment(bot.self_id, Message("bilibili AI总结:\n" + ai_conclusion['model_result']['summary']])))
-    await send_forward_both(bot, event, nodes)
+            all_seg.append(Message("bilibili AI总结:\n" + ai_conclusion['model_result']['summary']))
+    await send_forward_both(bot, event, make_node_segment(bot.self_id, all_seg))
     await bot.delete_msg(message_id=will_delete_id)
     # 删除临时文件
     if os.path.exists(data_path):
