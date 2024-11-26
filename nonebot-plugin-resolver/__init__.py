@@ -323,7 +323,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
     online_str = f'🏄‍♂️ 总共 {online["total"]} 人在观看，{online["count"]} 人在网页端观看'
     if video_duration <= VIDEO_DURATION_MAXIMUM:
         all_seg.append(MessageSegment.image(video_cover))
-        all_seg.append(Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
+        all_seg.append(Message(f"{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
     else:
         await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
         await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
