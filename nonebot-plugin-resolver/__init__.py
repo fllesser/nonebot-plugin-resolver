@@ -202,6 +202,11 @@ async def bilibili(bot: Bot, event: Event) -> None:
     :param event:
     :return:
     """
+    # 所有消息
+    nodes: Iterable[MessageSegment] = []
+    # 最后要撤回的消息 id
+    will_delete_id = 0
+
     # 消息
     url: str = str(event.message).strip()
     # 正则匹配
@@ -284,6 +289,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         await bili23.send(make_node_segment(bot.self_id, favs))
         return
     # 获取视频信息
+    will_delete_id = await bot.send(event, f"\n{GLOBAL_NICKNAME}识别到B站视频, 解析中...")
     video_id = re.search(r"video\/[^\?\/ ]+", url)[0].split('/')[1]
     v = video.Video(video_id, credential=credential)
     video_info = await v.get_info()
@@ -316,12 +322,11 @@ async def bilibili(bot: Bot, event: Event) -> None:
     online = await v.get_online()
     online_str = f'🏄‍♂️ 总共 {online["total"]} 人在观看，{online["count"]} 人在网页端观看'
     if video_duration <= VIDEO_DURATION_MAXIMUM:
-        await bili23.send(Message(MessageSegment.image(video_cover)) + Message(
-            f"\n{GLOBAL_NICKNAME}识别：B站，{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
+        nodes.append(make_node_segment(Message(MessageSegment.image(video_cover)) + Message(
+            f"\n{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}")))
     else:
-        return await bili23.finish(
-            Message(MessageSegment.image(video_cover)) + Message(
-                f"\n{GLOBAL_NICKNAME}识别：B站，{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！"))
+        await send_forward_both(bot, event, make_node_segment(Message(MessageSegment.image(video_cover)) + Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")))
+        return
     # 获取下载链接
     logger.info(page_num)
     download_url_data = await v.get_download_url(page_index=page_num)
@@ -338,16 +343,16 @@ async def bilibili(bot: Bot, event: Event) -> None:
     finally:
         remove_res = remove_files([f"{video_id}-video.m4s", f"{video_id}-audio.m4s"])
         logger.info(remove_res)
-    # 发送出去
-    # await bili23.send(Message(MessageSegment.video(f"{path}-res.mp4")))
-    await auto_video_send(event, f"{path}-res.mp4")
+    # 放入 segs
+    nodes.append(make_node_segment(bot.self_id, await get_video_seg(f'{path}-res.mp4')))
+
     # 这里是总结内容，如果写了cookie就可以
     if BILI_SESSDATA != '':
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
         if ai_conclusion['model_result']['summary'] != '':
-            send_forword_summary = make_node_segment(bot.self_id, ["bilibili AI总结",
-                                                                   ai_conclusion['model_result']['summary']])
-            await bili23.send(Message(send_forword_summary))
+            nodes.append(make_node_segment(bot.self_id, ["bilibili AI总结", ai_conclusion['model_result']['summary']]))
+    await send_forward_both(bot, event, nodes)
+    await bot.delete_msg(message_id=will_delete_id)
 
 
 @douyin.handle()
@@ -839,7 +844,7 @@ async def wb(bot: Bot, event: Event):
             await auto_video_send(event, path)
 
 
-def auto_determine_send_type(user_id: int, task: str):
+def auto_determine_send_type(user_id: int, task: str) -> MessageSegment:
     """
         判断是视频还是图片然后发送最后删除，函数在 twitter 这类可以图、视频混合发送的媒体十分有用
     :param user_id:
@@ -957,3 +962,29 @@ async def auto_video_send(event: Event, data_path: str):
             os.unlink(data_path)
         if os.path.exists(data_path + '.jpg'):
             os.unlink(data_path + '.jpg')
+
+async def get_video_seg(data_path: str) -> MessageSegment:
+    seg: MessageSegment
+    try:
+        # 如果data以"http"开头，先下载视频
+        if data_path is not None and data_path.startswith("http"):
+            data_path = await download_video(data_path)
+            
+
+        # 检测文件大小
+        file_size_in_mb = get_file_size_mb(data_path)
+
+        # 如果视频大于 100 MB 自动转换为群文件, 先忽略
+        if file_size_in_mb > VIDEO_MAX_MB:
+            seg = Message(f"当前解析文件 {file_size_in_mb} MB 大于 {VIDEO_MAX_MB} MB, 取消发送")
+        seg = MessageSegment.video(f'file://{data_path}')
+    except Exception as e:
+        logger.error(f"下载视频失败，具体错误为\n{e}")
+        seg = Message(f"下载视频失败，具体错误为\n{e}")
+    finally:
+        # 删除临时文件
+        if os.path.exists(data_path):
+            os.unlink(data_path)
+        if os.path.exists(data_path + '.jpg'):
+            os.unlink(data_path + '.jpg')
+        return seg

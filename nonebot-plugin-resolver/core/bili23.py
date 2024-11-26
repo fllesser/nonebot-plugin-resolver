@@ -38,9 +38,9 @@ async def merge_file_to_mp4(v_full_file_name: str, a_full_file_name: str, output
     # 使用 asyncio 创建子进程
     process = await asyncio.create_subprocess_shell(
         f'ffmpeg -y -i "{v_full_file_name}" -i "{a_full_file_name}" -c copy "{output_file_name}"',
-        shell=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        shell = True,
+        stdout = subprocess.DEVNULL,
+        stderr = subprocess.DEVNULL
     )
     
     # 等待子进程完成
