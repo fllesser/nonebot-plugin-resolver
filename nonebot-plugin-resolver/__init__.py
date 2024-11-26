@@ -349,7 +349,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
     if BILI_SESSDATA != '':
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
         if ai_conclusion['model_result']['summary'] != '':
-            nodes.append((bot.self_id, ["bilibili AI总结", ai_conclusion['model_result']['summary']]))
+            nodes.append(make_node_segment(bot.self_id, ["bilibili AI总结", ai_conclusion['model_result']['summary']]))
     await send_forward_both(bot, event, nodes)
     await bot.delete_msg(message_id=will_delete_id)
 
