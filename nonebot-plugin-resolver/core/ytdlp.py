@@ -16,10 +16,10 @@ async def get_video_title(url: str, is_oversea: bool, my_proxy=None, video_type=
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = await asyncio.to_thread(ydl.extract_info, url, download=False)
-            return info_dict.get('title', '-')
+            return info_dict.get('title', None)
     except Exception as e:
         logger.error(f"Error: {e}")
-        return '-'
+        return None
 
 async def download_ytb_video(url, is_oversea, path, my_proxy=None, video_type='youtube'):
     ydl_opts = {
@@ -38,7 +38,7 @@ async def download_ytb_video(url, is_oversea, path, my_proxy=None, video_type='y
             await asyncio.to_thread(ydl.download, [url])
         return f"{path}/temp.mp4"
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
         return None
 
 
