@@ -22,7 +22,7 @@ async def get_video_title(url: str, is_oversea: bool, my_proxy=None, video_type=
         return None
         
 async def download_ytb_video(url, is_oversea, path, my_proxy=None, video_type='youtube'):
-    filename = f"{video_type}-{random.randint(1, 10000})"
+    filename = f"{video_type}-{random.randint(1, 10000}"
     ydl_opts = {
         'outtmpl': f'{path}/{filename}.%(ext)s',
         'merge_output_format': 'mp4',
