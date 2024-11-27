@@ -325,28 +325,13 @@ async def bilibili(bot: Bot, event: Event) -> None:
     if video_duration > VIDEO_DURATION_MAXIMUM:
         all_seg.append(Message(f"⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！"))
     else:
-        # 获取下载链接
-        logger.info(page_num)
-        download_url_data = await v.get_download_url(page_index=page_num)
-        detecter = VideoDownloadURLDataDetecter(download_url_data)
-        streams = detecter.detect_best_streams()
-        video_url, audio_url = streams[0].url, streams[1].url
         # 下载视频和音频
-        path = f"{temp_path.absolute()}/{video.id}"
         try:
-            await asyncio.gather(
-                download_b_file(video_url, f"{path}-video.m4s", logger.info),
-                download_b_file(audio_url, f"{path}-audio.m4s", logger.info))
-            await merge_file_to_mp4(f"{video_id}-video.m4s", f"{video_id}-audio.m4s", f"{path}-res.mp4")
+            video_path = await download_ytb_video(url, True, temp_path.absolute(), None, "bilibili")
+            all_seg.append(await get_video_seg(video_path))
         except Exception as e:
-            logger.error(f"下载视频失败，具体错误为\n{e}")
-            all_seg.append(Message(f"下载视频失败，具体错误为\n{e}"))
-        finally:
-            remove_res = remove_files([f"{video_id}-video.m4s", f"{video_id}-audio.m4s"])
-            logger.info(remove_res)
-        # 放入 segs
-        data_path = f"{path}-res.mp4"
-        all_seg.append(await get_video_seg(f'{path}-res.mp4'))
+            logger.error(f"下载视频失败，错误为\n{e}")
+            all_seg.append(Message(f"下载视频失败，错误为\n{e}"))
      # 这里是总结内容，如果写了cookie就可以
     if BILI_SESSDATA != '':
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
