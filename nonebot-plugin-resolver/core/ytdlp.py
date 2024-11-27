@@ -29,8 +29,9 @@ async def ytdlp_download_video(url: str, path: str, type: str, height: int = 108
     ydl_opts = {
         'outtmpl': f'{filename}.%(ext)s',
         'merge_output_format': 'mp4',
-        'format': f'best[height<={height}]/worst[height<=720]',
     }
+    if not 'shorts' in url:
+        ydl_opts['format'] = 'bv*[width=1280][height=720]+ba'
 
     if proxy:
         ydl_opts['proxy'] = proxy
