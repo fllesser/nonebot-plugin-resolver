@@ -204,6 +204,8 @@ async def bilibili(bot: Bot, event: Event) -> None:
     """
     # 所有消息
     all_seg = []
+    will_delete_id = 0
+    data_path = ""
 
     # 消息
     url: str = str(event.message).strip()
@@ -349,7 +351,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         if ai_conclusion['model_result']['summary'] != '':
             all_seg.append(Message("bilibili AI总结:\n" + ai_conclusion['model_result']['summary']))
     await send_forward_both(bot, event, make_node_segment(bot.self_id, all_seg))
-    await bot.delete_msg(message_id=will_delete_id)
+    # await bot.delete_msg(message_id=will_delete_id)
     # 删除临时文件
     if os.path.exists(data_path):
         os.unlink(data_path)
