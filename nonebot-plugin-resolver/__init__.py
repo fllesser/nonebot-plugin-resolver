@@ -210,7 +210,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
     :return:
     """
     # 所有消息
-    all_seg = []
+    segs = []
     will_delete_id = 0
 
     # 消息
@@ -324,28 +324,28 @@ async def bilibili(bot: Bot, event: Event) -> None:
     # 截断下载时间比较长的视频
     online = await v.get_online()
     online_str = f'🏄‍♂️ 总共 {online["total"]} 人在观看，{online["count"]} 人在网页端观看'
-    all_seg.append(MessageSegment.image(video_cover))
-    all_seg.append(Message(f"{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
+    segs.append(MessageSegment.image(video_cover))
+    segs.append(Message(f"{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
     if video_duration > VIDEO_DURATION_MAXIMUM:
-        all_seg.append(Message(f"⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟!"))
+        segs.append(Message(f"⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟!"))
     else:
         # 下载视频和音频
         try:
             video_path = await ytdlp_download_video(
                 url = url, path = (r_path / 'temp').absolute(), type = 'bilibili')
             if video_path.endswith('mp4')
-                all_seg.append(await get_video_seg(video_path))
+                segs.append(await get_video_seg(video_path))
             else:
-                all_seg.append(Message(f"视频下载失败，错误：{video_path}"))
+                segs.append(Message(f"视频下载失败，错误：{video_path}"))
         except Exception as e:
             logger.error(f"下载视频失败，错误为\n{e}")
-            all_seg.append(Message(f"下载视频失败，错误为\n{e}"))
+            segs.append(Message(f"下载视频失败，错误为\n{e}"))
      # 这里是总结内容，如果写了 cookie 就可以
     if credential:
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
         if ai_conclusion['model_result']['summary'] != '':
-            all_seg.append(Message("bilibili AI总结:\n" + ai_conclusion['model_result']['summary']))
-    await send_forward_both(bot, event, make_node_segment(bot.self_id, all_seg))
+            segs.append(Message("bilibili AI总结:\n" + ai_conclusion['model_result']['summary']))
+    await send_forward_both(bot, event, make_node_segment(bot.self_id, segs))
     await bot.delete_msg(message_id = will_delete_id)
 
 
