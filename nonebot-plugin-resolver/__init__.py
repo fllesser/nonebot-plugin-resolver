@@ -333,7 +333,8 @@ async def bilibili(bot: Bot, event: Event) -> None:
         try:
             video_path = await ytdlp_download_video(
                 url = url, path = (r_path / 'temp').absolute(), type = 'bilibili', height = 1080, cookiefile = 'bili_cookie.txt')
-            all_seg.append(await get_video_seg(video_path))
+            if video_path:
+                all_seg.append(await get_video_seg(video_path))
         except Exception as e:
             logger.error(f"下载视频失败，错误为\n{e}")
             all_seg.append(Message(f"下载视频失败，错误为\n{e}"))
