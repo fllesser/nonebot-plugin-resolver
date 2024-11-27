@@ -332,7 +332,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         streams = detecter.detect_best_streams()
         video_url, audio_url = streams[0].url, streams[1].url
         # 下载视频和音频
-        path = f"{temp_path.absolute()}/video_id"
+        path = f"{temp_path.absolute()}/{video.id}"
         try:
             await asyncio.gather(
                 download_b_file(video_url, f"{path}-video.m4s", logger.info),
