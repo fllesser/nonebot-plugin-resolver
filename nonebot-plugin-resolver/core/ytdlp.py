@@ -1,5 +1,5 @@
 import yt_dlp, asyncio
-
+import random
 from nonebot import logger
 
 async def get_video_title(url: str, is_oversea: bool, my_proxy=None, video_type='youtube') -> str:
@@ -18,12 +18,13 @@ async def get_video_title(url: str, is_oversea: bool, my_proxy=None, video_type=
             info_dict = await asyncio.to_thread(ydl.extract_info, url, download=False)
             return info_dict.get('title', None)
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(e)
         return None
-
+        
 async def download_ytb_video(url, is_oversea, path, my_proxy=None, video_type='youtube'):
+    filename = f"{video_type}-{random.randint(1, 10000})"
     ydl_opts = {
-        'outtmpl': f'{path}/temp.%(ext)s',
+        'outtmpl': f'{path}/{filename}.%(ext)s',
         'merge_output_format': 'mp4',
     }
     if video_type == 'youtube':
@@ -36,9 +37,10 @@ async def download_ytb_video(url, is_oversea, path, my_proxy=None, video_type='y
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             await asyncio.to_thread(ydl.download, [url])
-        return f"{path}/temp.mp4"
+        return path / f'{filename}.mp4'
+      
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(e)
         return None
 
 
