@@ -332,7 +332,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         streams = detecter.detect_best_streams()
         video_url, audio_url = streams[0].url, streams[1].url
         # 下载视频和音频
-        path = temp_path / video_id
+        path = f"{temp_path.absolute()}/video_id"
         try:
             await asyncio.gather(
                 download_b_file(video_url, f"{path}-video.m4s", logger.info),
@@ -472,7 +472,7 @@ async def tiktok(event: Event) -> None:
         title ="网络繁忙，获取标题失败"
     await tik.send(Message(f"{GLOBAL_NICKNAME}识别：TikTok - {title}"))
 
-    target_tik_video_path = await download_ytb_video(url, IS_OVERSEA, temp_path, resolver_proxy, 'tiktok')
+    target_tik_video_path = await download_ytb_video(url, IS_OVERSEA, temp_path.absolute(), resolver_proxy, 'tiktok')
     if target_tik_video_path:
         await auto_video_send(event, target_tik_video_path)
     else:
@@ -667,7 +667,7 @@ async def youtube(bot: Bot, event: Event):
         title = "网络繁忙，获取标题失败"
     await y2b.send(f"{GLOBAL_NICKNAME}识别：油管 - {title}\n正在下载视频...")
 
-    target_ytb_video_path = await download_ytb_video(msg_url, IS_OVERSEA, temp_path, proxy)
+    target_ytb_video_path = await download_ytb_video(msg_url, IS_OVERSEA, temp_path.absolute(), proxy)
     if target_ytb_video_path:
         await auto_video_send(event, target_ytb_video_path)
     else:
