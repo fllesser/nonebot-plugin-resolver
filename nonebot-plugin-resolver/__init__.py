@@ -204,8 +204,6 @@ async def bilibili(bot: Bot, event: Event) -> None:
     """
     # 所有消息
     all_seg = []
-    # 最后要撤回的消息 id
-    will_delete_id = 0
 
     # 消息
     url: str = str(event.message).strip()
@@ -271,8 +269,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         with open(markdown_path, 'w', encoding='utf8') as f:
             f.write(ar.markdown())
         await bili23.send(Message(f"{GLOBAL_NICKNAME}识别：哔哩哔哩专栏"))
-        await bili23.send(Message(MessageSegment(type="file", data={ "file": markdown_path })))
-        return
+        await bili23.finish(Message(MessageSegment(type="file", data={ "file": markdown_path })))
     # 收藏夹识别
     if 'favlist' in url and BILI_SESSDATA != '':
         # https://space.bilibili.com/22990202/favlist?fid=2344812202
@@ -286,16 +283,14 @@ async def bilibili(bot: Bot, event: Event) -> None:
                 [MessageSegment.image(cover),
                  MessageSegment.text(f'🧉 标题：{title}\n📝 简介：{intro}\n🔗 链接：{link}')])
         await bili23.send(f'{GLOBAL_NICKNAME}识别：哔哩哔哩收藏夹，正在为你找出相关链接请稍等...')
-        await bili23.send(make_node_segment(bot.self_id, favs))
-        return
+        await bili23.finish(make_node_segment(bot.self_id, favs))
     # 获取视频信息
-    will_delete_id = await bot.send(event, f"{GLOBAL_NICKNAME}识别到B站视频, 解析中...")
+    will_delete_id: int = await bot.send(event, f"{GLOBAL_NICKNAME}识别到B站视频, 解析中...")
     video_id = re.search(r"video\/[^\?\/ ]+", url)[0].split('/')[1]
     v = video.Video(video_id, credential=credential)
     video_info = await v.get_info()
     if video_info is None:
-        await bili23.send(Message(f"{GLOBAL_NICKNAME}识别：B站，出错，无法获取数据！"))
-        return
+        await bili23.finish(Message(f"{GLOBAL_NICKNAME}识别：B站，出错，无法获取数据！"))
     video_title, video_cover, video_desc, video_duration = video_info['title'], video_info['pic'], video_info['desc'], \
         video_info['duration']
     # 校准 分p 的情况
@@ -321,35 +316,34 @@ async def bilibili(bot: Bot, event: Event) -> None:
     # 截断下载时间比较长的视频
     online = await v.get_online()
     online_str = f'🏄‍♂️ 总共 {online["total"]} 人在观看，{online["count"]} 人在网页端观看'
-    if video_duration <= VIDEO_DURATION_MAXIMUM:
-        all_seg.append(MessageSegment.image(video_cover))
-        all_seg.append(Message(f"{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
+    all_seg.append(MessageSegment.image(video_cover))
+    all_seg.append(Message(f"{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
+    if video_duration > VIDEO_DURATION_MAXIMUM:
+        all_seg.append(Message(f"⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！"))
     else:
-        await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
-        await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
-        await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
-        await send_forward_both(bot, event, make_node_segment(bot.self_id, [MessageSegment.image(video_cover), Message(f"\n{video_title}\n{extra_bili_info(video_info)}\n简介：{video_desc}\n{online_str}\n---------\n⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！")]))
-        return
-    # 获取下载链接
-    logger.info(page_num)
-    download_url_data = await v.get_download_url(page_index=page_num)
-    detecter = VideoDownloadURLDataDetecter(download_url_data)
-    streams = detecter.detect_best_streams()
-    video_url, audio_url = streams[0].url, streams[1].url
-    # 下载视频和音频
-    path = os.getcwd() + "/" + video_id
-    try:
-        await asyncio.gather(
-            download_b_file(video_url, f"{path}-video.m4s", logger.info),
-            download_b_file(audio_url, f"{path}-audio.m4s", logger.info))
-        await merge_file_to_mp4(f"{video_id}-video.m4s", f"{video_id}-audio.m4s", f"{path}-res.mp4")
-    finally:
-        remove_res = remove_files([f"{video_id}-video.m4s", f"{video_id}-audio.m4s"])
-        logger.info(remove_res)
-    # 放入 segs
-    data_path = f"{path}-res.mp4"
-    all_seg.append(await get_video_seg(f'{path}-res.mp4'))
-    # 这里是总结内容，如果写了cookie就可以
+        # 获取下载链接
+        logger.info(page_num)
+        download_url_data = await v.get_download_url(page_index=page_num)
+        detecter = VideoDownloadURLDataDetecter(download_url_data)
+        streams = detecter.detect_best_streams()
+        video_url, audio_url = streams[0].url, streams[1].url
+        # 下载视频和音频
+        path = os.getcwd() + "/" + video_id
+        try:
+            await asyncio.gather(
+                download_b_file(video_url, f"{path}-video.m4s", logger.info),
+                download_b_file(audio_url, f"{path}-audio.m4s", logger.info))
+            await merge_file_to_mp4(f"{video_id}-video.m4s", f"{video_id}-audio.m4s", f"{path}-res.mp4")
+        except Exception as e:
+            logger.error(f"下载视频失败，具体错误为\n{e}")
+            all_seg.append(Message(f"下载视频失败，具体错误为\n{e}"))
+        finally:
+            remove_res = remove_files([f"{video_id}-video.m4s", f"{video_id}-audio.m4s"])
+            logger.info(remove_res)
+        # 放入 segs
+        data_path = f"{path}-res.mp4"
+        all_seg.append(await get_video_seg(f'{path}-res.mp4'))
+     # 这里是总结内容，如果写了cookie就可以
     if BILI_SESSDATA != '':
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
         if ai_conclusion['model_result']['summary'] != '':
