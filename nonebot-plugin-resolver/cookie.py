@@ -12,7 +12,7 @@ def save_cookies_to_netscape(cookies_str, file_path, domain):
 
     # 从字符串创建 cookies 并添加到 MozillaCookieJar 对象
     for cookie in cookies_str.split(';'):
-        name, value = cookie.trim().split('=', 1)
+        name, value = cookie.strip().split('=', 1)
         cj.set_cookie(http.cookiejar.Cookie(
             version=0, name=name, value=value, port=None, port_specified=False,
             domain="." + domain, domain_specified=True, domain_initial_dot=False,
