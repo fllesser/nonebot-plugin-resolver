@@ -466,13 +466,15 @@ async def tiktok(event: Event) -> None:
     else:
         url = re.search(url_reg, url)[0]
     title = await get_video_title(url, IS_OVERSEA, resolver_proxy, 'tiktok')
-
+    if not title:
+        title ="网络繁忙，获取标题失败"
     await tik.send(Message(f"{GLOBAL_NICKNAME}识别：TikTok - {title}"))
 
     target_tik_video_path = await download_ytb_video(url, IS_OVERSEA, os.getcwd(), resolver_proxy, 'tiktok')
-
-    await auto_video_send(event, target_tik_video_path)
-
+    if target_tik_video_path:
+        await auto_video_send(event, target_tik_video_path)
+    else:
+        await tik.finish("网络繁忙，下载视频出错")
 
 @acfun.handle()
 @resolve_handler
@@ -659,12 +661,15 @@ async def youtube(bot: Bot, event: Event):
     proxy = None if IS_OVERSEA else resolver_proxy
 
     title = await get_video_title(msg_url, IS_OVERSEA, proxy)
-
-    await y2b.send(Message(f"{GLOBAL_NICKNAME}识别：油管 - {title}"))
+    if not title:
+        title = "网络繁忙，获取标题失败"
+    await y2b.send(f"{GLOBAL_NICKNAME}识别：油管 - {title}\n正在下载视频...")
 
     target_ytb_video_path = await download_ytb_video(msg_url, IS_OVERSEA, os.getcwd(), proxy)
-
-    await auto_video_send(event, target_ytb_video_path)
+    if target_ytb_video_path:
+        await auto_video_send(event, target_ytb_video_path)
+    else:
+        await y2b.finish("网络繁忙，下载视频出错")
 
 
 @ncm.handle()
