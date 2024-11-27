@@ -3,6 +3,7 @@ import os.path
 from functools import wraps
 from typing import cast, Iterable, Union
 from urllib.parse import parse_qs
+from pathlib import Path
 
 from bilibili_api import video, Credential, live, article
 from bilibili_api.favorite_list import get_video_favorite_list_content
@@ -38,6 +39,7 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={ "~onebot.v11" }
 )
 
+temp_path = Path() / 'temp
 # 配置加载
 global_config = Config.parse_obj(get_driver().config.dict())
 # 全局名称
@@ -330,7 +332,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         streams = detecter.detect_best_streams()
         video_url, audio_url = streams[0].url, streams[1].url
         # 下载视频和音频
-        path = os.getcwd() + "/" + video_id
+        path = temp_path / video_id
         try:
             await asyncio.gather(
                 download_b_file(video_url, f"{path}-video.m4s", logger.info),
@@ -470,7 +472,7 @@ async def tiktok(event: Event) -> None:
         title ="网络繁忙，获取标题失败"
     await tik.send(Message(f"{GLOBAL_NICKNAME}识别：TikTok - {title}"))
 
-    target_tik_video_path = await download_ytb_video(url, IS_OVERSEA, os.getcwd(), resolver_proxy, 'tiktok')
+    target_tik_video_path = await download_ytb_video(url, IS_OVERSEA, temp_path, resolver_proxy, 'tiktok')
     if target_tik_video_path:
         await auto_video_send(event, target_tik_video_path)
     else:
@@ -665,7 +667,7 @@ async def youtube(bot: Bot, event: Event):
         title = "网络繁忙，获取标题失败"
     await y2b.send(f"{GLOBAL_NICKNAME}识别：油管 - {title}\n正在下载视频...")
 
-    target_ytb_video_path = await download_ytb_video(msg_url, IS_OVERSEA, os.getcwd(), proxy)
+    target_ytb_video_path = await download_ytb_video(msg_url, IS_OVERSEA, temp_path, proxy)
     if target_ytb_video_path:
         await auto_video_send(event, target_ytb_video_path)
     else:
