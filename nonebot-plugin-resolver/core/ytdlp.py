@@ -37,7 +37,7 @@ async def download_ytb_video(url, is_oversea, path, my_proxy=None, video_type='y
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             await asyncio.to_thread(ydl.download, [url])
-        return path / f'{filename}.mp4'
+        return f'{path}/{filename}.mp4'
       
     except Exception as e:
         logger.error(e)
