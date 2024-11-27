@@ -333,7 +333,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         try:
             video_path = await ytdlp_download_video(
                 url = url, path = (r_path / 'temp').absolute(), type = 'bilibili')
-            if video_path:
+            if video_path.endswith('mp4')
                 all_seg.append(await get_video_seg(video_path))
             else:
                 all_seg.append(Message(f"视频下载失败，错误：{video_path}"))
