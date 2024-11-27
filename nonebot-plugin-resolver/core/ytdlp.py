@@ -31,10 +31,6 @@ async def ytdlp_download_video(url: str, path: str, type: str, height: int = 108
         'merge_output_format': 'mp4',
     }
     
-    if type = 'youtube':
-        ydl_opts['format'] = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
-        
-    
     if proxy:
         ydl_opts['proxy'] = proxy
     if cookiefile:
@@ -47,7 +43,7 @@ async def ytdlp_download_video(url: str, path: str, type: str, height: int = 108
       
     except Exception as e:
         logger.error(e)
-        return '' + e 
+        return f'{e}'
         
         
 
