@@ -39,7 +39,7 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={ "~onebot.v11" }
 )
 
-temp_path = Path() / 'temp
+temp_path = Path() / 'temp'
 # 配置加载
 global_config = Config.parse_obj(get_driver().config.dict())
 # 全局名称
