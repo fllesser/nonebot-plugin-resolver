@@ -1,5 +1,6 @@
 import asyncio
 import os.path
+import random
 from functools import wraps
 from typing import cast, Iterable, Union
 from urllib.parse import parse_qs
@@ -8,8 +9,7 @@ from pathlib import Path
 from bilibili_api import video, Credential, live, article
 from bilibili_api.favorite_list import get_video_favorite_list_content
 from bilibili_api.opus import Opus
-from bilibili_api.video import VideoDownloadURLDataDetecter
-from nonebot import on_regex, get_driver, on_command
+from nonebot import on_regex, on_command, get_plugin_config
 from nonebot.adapters.onebot.v11 import Message, Event, Bot, MessageSegment, GROUP_ADMIN, GROUP_OWNER
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent, PrivateMessageEvent
 from nonebot.matcher import current_bot
@@ -18,16 +18,17 @@ from nonebot.plugin import PluginMetadata
 from nonebot.rule import to_me
 
 from .config import Config
+from .cookie import save_cookies_to_netscape
 # noinspection PyUnresolvedReferences
 from .constants import COMMON_HEADER, URL_TYPE_CODE_DICT, DOUYIN_VIDEO, GENERAL_REQ_LINK, XHS_REQ_LINK, DY_TOUTIAO_INFO, \
     BILIBILI_HEADER, NETEASE_API_CN, NETEASE_TEMP_API, VIDEO_MAX_MB, \
     WEIBO_SINGLE_INFO, KUGOU_TEMP_API
 from .core.acfun import parse_url, download_m3u8_videos, parse_m3u8, merge_ac_file_to_mp4
-from .core.bili23 import download_b_file, merge_file_to_mp4, extra_bili_info
+from .core.bili23 import extra_bili_info
 from .core.common import *
 from .core.tiktok import generate_x_bogus_url
 from .core.weibo import mid2id
-from .core.ytdlp import get_video_title, download_ytb_video
+from .core.ytdlp import get_video_title, ytdlp_download_video
 
 __plugin_meta__ = PluginMetadata(
     name="链接分享解析器",
@@ -39,23 +40,27 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={ "~onebot.v11" }
 )
 
-temp_path = Path() / 'temp'
+r_path = Path() / 'data' /'nonebot-plugin-resolver'
+
 # 配置加载
-global_config = Config.parse_obj(get_driver().config.dict())
+global_config = get_plugin_config(Config)
 # 全局名称
-GLOBAL_NICKNAME: str = str(getattr(global_config, "r_global_nickname", ""))
-# 🪜地址
-resolver_proxy: str = getattr(global_config, "resolver_proxy", "http://127.0.0.1:7890")
-# 是否是海外服务器
-IS_OVERSEA: bool = bool(getattr(global_config, "is_oversea", False))
-# 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
-VIDEO_DURATION_MAXIMUM: int = int(getattr(global_config, "video_duration_maximum", 480))
+GLOBAL_NICKNAME: str = global_config.r_global_nickname
+# 根据是否为国外机器声明代理
+PROXY: str = "" if not global_config.is_oversea else global_config.resolver_proxy
+# 哔哩哔哩限制的最大视频时长（默认8分钟）单位：秒
+VIDEO_DURATION_MAXIMUM: int = global_config.video_duration_maximum
 # 全局解析内容控制
-GLOBAL_RESOLVE_CONTROLLER: list = split_and_strip(str(getattr(global_config, "global_resolve_controller", "[]")), ",")
-# 哔哩哔哩的 SESSDATA
-BILI_SESSDATA: str = str(getattr(global_config, "bili_sessdata", ""))
-# 构建哔哩哔哩的Credential
-credential = Credential(sessdata=BILI_SESSDATA)
+GLOBAL_RESOLVE_CONTROLLER: list[str] = global_config.global_resolve_controller.split(",")
+# 视频最大高度
+HEIGHT: int = global_config.max_video_height
+# 处理 cookie
+if global_config.bili_ck != '':
+    save_cookies_to_netscape(global_config.bili_ck, r_path / 'cookie' / 'bili_cookie.txt', 'bilibili.com')
+if global_config.ytb_ck != '':
+    save_cookies_to_netscape(global_config.ytb_ck, r_path / 'cookie' / 'ytb_cookie.txt', 'youtube.com')
+# 构建哔哩哔哩的 Credential
+credential = Credential(sessdata=global_config.bili_ck) if global_config.bili_ck != '' else None
 
 bili23 = on_regex(
     r"(bilibili.com|b23.tv|^BV[0-9a-zA-Z]{10}$)", priority=1
@@ -207,7 +212,6 @@ async def bilibili(bot: Bot, event: Event) -> None:
     # 所有消息
     all_seg = []
     will_delete_id = 0
-    data_path = ""
 
     # 消息
     url: str = str(event.message).strip()
@@ -225,7 +229,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
     else:
         url: str = re.search(url_reg, url).group(0)
     # ===============发现解析的是动态，转移一下===============
-    if ('t.bilibili.com' in url or '/opus' in url) and BILI_SESSDATA != '':
+    if ('t.bilibili.com' in url or '/opus' in url) and credential:
         # 去除多余的参数
         if '?' in url:
             url = url[:url.index('?')]
@@ -275,7 +279,7 @@ async def bilibili(bot: Bot, event: Event) -> None:
         await bili23.send(Message(f"{GLOBAL_NICKNAME}识别：哔哩哔哩专栏"))
         await bili23.finish(Message(MessageSegment(type="file", data={ "file": markdown_path })))
     # 收藏夹识别
-    if 'favlist' in url and BILI_SESSDATA != '':
+    if 'favlist' in url and credential:
         # https://space.bilibili.com/22990202/favlist?fid=2344812202
         fav_id = re.search(r'favlist\?fid=(\d+)', url).group(1)
         fav_list = (await get_video_favorite_list_content(fav_id))['medias'][:10]
@@ -289,15 +293,15 @@ async def bilibili(bot: Bot, event: Event) -> None:
         await bili23.send(f'{GLOBAL_NICKNAME}识别：哔哩哔哩收藏夹，正在为你找出相关链接请稍等...')
         await bili23.finish(make_node_segment(bot.self_id, favs))
     # 获取视频信息
-    will_delete_id: int = await bot.send(event, f"{GLOBAL_NICKNAME}识别到B站视频, 解析中...")
+    will_delete_id: int = (await bili23.send(f'{GLOBAL_NICKNAME}识别：哔哩哔哩, 解析中.....'))["message_id"]
     video_id = re.search(r"video\/[^\?\/ ]+", url)[0].split('/')[1]
     v = video.Video(video_id, credential=credential)
     video_info = await v.get_info()
     if video_info is None:
-        await bili23.finish(Message(f"{GLOBAL_NICKNAME}识别：B站，出错，无法获取数据！"))
+        await bili23.finish(Message(f"{GLOBAL_NICKNAME}识别：哔哩哔哩，出错，无法获取数据！"))
     video_title, video_cover, video_desc, video_duration = video_info['title'], video_info['pic'], video_info['desc'], \
         video_info['duration']
-    # 校准 分p 的情况
+    # 校准 分 p 的情况
     page_num = 0
     if 'pages' in video_info:
         # 解析URL
@@ -323,27 +327,24 @@ async def bilibili(bot: Bot, event: Event) -> None:
     all_seg.append(MessageSegment.image(video_cover))
     all_seg.append(Message(f"{video_title}\n{extra_bili_info(video_info)}\n📝 简介：{video_desc}\n{online_str}"))
     if video_duration > VIDEO_DURATION_MAXIMUM:
-        all_seg.append(Message(f"⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟！"))
+        all_seg.append(Message(f"⚠️ 当前视频时长 {video_duration // 60} 分钟，超过管理员设置的最长时间 {VIDEO_DURATION_MAXIMUM // 60} 分钟!"))
     else:
         # 下载视频和音频
         try:
-            video_path = await download_ytb_video(url, True, temp_path.absolute(), None, "bilibili")
+            video_path = await ytdlp_download_video(
+                url = url, path = (r_path / 'temp').absolute(), type = 'bilibili', height = 1080, cookiefile = 'bili_cookie.txt')
             all_seg.append(await get_video_seg(video_path))
         except Exception as e:
             logger.error(f"下载视频失败，错误为\n{e}")
             all_seg.append(Message(f"下载视频失败，错误为\n{e}"))
-     # 这里是总结内容，如果写了cookie就可以
-    if BILI_SESSDATA != '':
+     # 这里是总结内容，如果写了 cookie 就可以
+    if credential:
         ai_conclusion = await v.get_ai_conclusion(await v.get_cid(0))
         if ai_conclusion['model_result']['summary'] != '':
             all_seg.append(Message("bilibili AI总结:\n" + ai_conclusion['model_result']['summary']))
     await send_forward_both(bot, event, make_node_segment(bot.self_id, all_seg))
-    # await bot.delete_msg(message_id=will_delete_id)
-    # 删除临时文件
-    if os.path.exists(data_path):
-        os.unlink(data_path)
-    if os.path.exists(data_path + '.jpg'):
-        os.unlink(data_path + '.jpg')
+    await bot.delete_msg(message_id = will_delete_id)
+
 
 
 @douyin.handle()
@@ -369,7 +370,7 @@ async def dy(bot: Bot, event: Event) -> None:
     dou_id = re.search(reg2, dou_url_2, re.I)[2]
     # logger.info(dou_id)
     # 如果没有设置dy的ck就结束，因为获取不到
-    douyin_ck = getattr(global_config, "douyin_ck", "")
+    douyin_ck = global_config.douyin_ck
     if douyin_ck == "":
         logger.error(global_config)
         await douyin.send(Message(f"{GLOBAL_NICKNAME}识别：抖音，无法获取到管理员设置的抖音ck！"))
@@ -433,33 +434,31 @@ async def tiktok(event: Event) -> None:
     # 消息
     url: str = str(event.message).strip()
 
-    # 海外服务器判断
-    proxy = None if IS_OVERSEA else resolver_proxy
-
     url_reg = r"(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#@]*"
     url_short_reg = r"(http:|https:)\/\/vt.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*"
     url_short_reg2 = r"(http:|https:)\/\/vm.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*"
 
     if "vt.tiktok" in url:
         temp_url = re.search(url_short_reg, url)[0]
-        temp_resp = httpx.get(temp_url, follow_redirects=True, proxies=proxy)
+        temp_resp = httpx.get(temp_url, follow_redirects=True, proxies=PROXY)
         url = temp_resp.url
     elif "vm.tiktok" in url:
         temp_url = re.search(url_short_reg2, url)[0]
         temp_resp = httpx.get(temp_url, headers={ "User-Agent": "facebookexternalhit/1.1" }, follow_redirects=True,
-                              proxies=proxy)
+                              proxies=PROXY)
         url = str(temp_resp.url)
         # logger.info(url)
     else:
         url = re.search(url_reg, url)[0]
-    title = await get_video_title(url, IS_OVERSEA, resolver_proxy, 'tiktok')
+    title = await get_video_title(url = url, proxy = PROXY)
     if not title:
         title ="网络繁忙，获取标题失败"
     await tik.send(Message(f"{GLOBAL_NICKNAME}识别：TikTok - {title}"))
 
-    target_tik_video_path = await download_ytb_video(url, IS_OVERSEA, temp_path.absolute(), resolver_proxy, 'tiktok')
-    if target_tik_video_path:
-        await auto_video_send(event, target_tik_video_path)
+    video_path = await ytdlp_download_video(
+        url = url, path = (r_path / 'temp').absolute(), type = 'tiktok', height = HEIGHT, proxy = PROXY)
+    if video_path:
+        await auto_video_send(event, video_path)
     else:
         await tik.finish("网络繁忙，下载视频出错")
 
@@ -530,15 +529,12 @@ async def twitter(bot: Bot, event: Event):
 
     await twit.send(Message(f"{GLOBAL_NICKNAME}识别：小蓝鸟学习版"))
 
-    # 海外服务器判断
-    proxy = None if IS_OVERSEA else resolver_proxy
-
     # 图片
     if x_url_res.endswith(".jpg") or x_url_res.endswith(".png"):
-        res = await download_img(x_url_res, '', proxy)
+        res = await download_img(x_url_res, '', PROXY)
     else:
         # 视频
-        res = await download_video(x_url_res, proxy)
+        res = await download_video(x_url_res, PROXY)
     aio_task_res = auto_determine_send_type(int(bot.self_id), res)
 
     # 发送异步后的数据
@@ -640,21 +636,19 @@ async def xiaohongshu(bot: Bot, event: Event):
 @resolve_handler
 @resolve_controller
 async def youtube(bot: Bot, event: Event):
-    msg_url = re.search(
+    url = re.search(
         r"(?:https?:\/\/)?(www\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*|(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*",
         str(event.message).strip())[0]
 
-    # 海外服务器判断
-    proxy = None if IS_OVERSEA else resolver_proxy
-
-    title = await get_video_title(msg_url, IS_OVERSEA, proxy)
+    title = await get_video_title(url, "ytb_cookie.txt", PROXY)
     if not title:
         title = "网络繁忙，获取标题失败"
     await y2b.send(f"{GLOBAL_NICKNAME}识别：油管 - {title}\n正在下载视频...")
 
-    target_ytb_video_path = await download_ytb_video(msg_url, IS_OVERSEA, temp_path.absolute(), proxy)
-    if target_ytb_video_path:
-        await auto_video_send(event, target_ytb_video_path)
+    video_path = await ytdlp_download_video(
+        url = url, path = (r_path / 'temp').absolute(), type="ytb", height=HEIGHT, cookiefile = "ytb_cookie.txt", proxy = PROXY)
+    if video_path:
+        await auto_video_send(event, video_path)
     else:
         await y2b.finish("网络繁忙，下载视频出错")
 
@@ -879,11 +873,9 @@ async def send_forward_both(bot: Bot, event: Event, segments: Union[MessageSegme
     :return:
     """
     if isinstance(event, GroupMessageEvent):
-        await bot.send_group_forward_msg(group_id=event.group_id,
-                                         messages=segments)
+        await bot.send_group_forward_msg(group_id=event.group_id, messages=segments)
     else:
-        await bot.send_private_forward_msg(user_id=event.user_id,
-                                           messages=segments)
+        await bot.send_private_forward_msg(user_id=event.user_id, messages=segments)
 
 
 async def send_both(bot: Bot, event: Event, segments: MessageSegment) -> None:
@@ -895,11 +887,9 @@ async def send_both(bot: Bot, event: Event, segments: MessageSegment) -> None:
     :return:
     """
     if isinstance(event, GroupMessageEvent):
-        await bot.send_group_msg(group_id=event.group_id,
-                                 message=Message(segments))
+        await bot.send_group_msg(group_id=event.group_id, message=Message(segments))
     elif isinstance(event, PrivateMessageEvent):
-        await bot.send_private_msg(user_id=event.user_id,
-                                   message=Message(segments))
+        await bot.send_private_msg(user_id=event.user_id, message=Message(segments))
 
 
 async def upload_both(bot: Bot, event: Event, file_path: str, name: str) -> None:

@@ -1,47 +1,50 @@
-import yt_dlp, asyncio
+import yt_dlp
 import random
-from nonebot import logger
+import asyncio
 
-async def get_video_title(url: str, is_oversea: bool, my_proxy=None, video_type='youtube') -> str:
+from nonebot import logger
+from pathlib import Path
+
+async def get_video_title(url: str, cookiefile: str = '', proxy: str = '') -> str:
     ydl_opts = {
         'quiet': True,
         'skip_download': True,
         'force_generic_extractor': True,
     }
-    if not is_oversea and my_proxy:
-        ydl_opts['proxy'] = my_proxy
-    if video_type == 'youtube':
-        ydl_opts['cookiefile'] = 'ytb_cookies.txt'
+    if proxy:
+        ydl_opts['proxy'] = proxy
+    if cookiefile:
+        ydl_opts['cookiefile'] = f"data/nonebot-plugin-resolver/cookie/{cookiefile}"
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = await asyncio.to_thread(ydl.extract_info, url, download=False)
-            return info_dict.get('title', None)
+            return info_dict.get('title', '')
     except Exception as e:
         logger.error(e)
-        return None
+        return ''
         
-async def download_ytb_video(url, is_oversea, path, my_proxy=None, video_type='youtube'):
-    filename = f"{video_type}-{random.randint(1, 10000)}"
+async def ytdlp_download_video(url: str, path: str, type: str, height: int = 1080, cookiefile: str = '', proxy: str = '') -> str:
+    filename = f"{path}/{type}-{random.randint(1, 10000)}"
     ydl_opts = {
-        'outtmpl': f'{path}/{filename}.%(ext)s',
+        'outtmpl': f'{filename}.%(ext)s',
         'merge_output_format': 'mp4',
+        'format': f'best[height<={height}]',
     }
-    if video_type == 'youtube':
-        ydl_opts['cookiefile'] = 'ytb_cookies.txt'
-        if not 'shorts' in url:
-            ydl_opts['format'] = 'bv*[width=1280][height=720]+ba'
-    if not is_oversea and my_proxy:
-        ydl_opts['proxy'] = my_proxy
+
+    if proxy:
+        ydl_opts['proxy'] = proxy
+    if cookiefile:
+        ydl_opts['cookiefile'] = f"data/nonebot-plugin-resolver/cookie/{cookiefile}"
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             await asyncio.to_thread(ydl.download, [url])
-        return f'{path}/{filename}.mp4'
+        return f'{filename}.mp4'
       
     except Exception as e:
         logger.error(e)
-        return None
+        return ''
 
 
   
