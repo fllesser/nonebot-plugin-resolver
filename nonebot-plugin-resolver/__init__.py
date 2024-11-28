@@ -22,7 +22,7 @@ async def _():
     format_cookies()
     # 处理黑名单 resovler
     for resolver in rconfig.black_resolvers:
-        if matcher := resolvers[resolver]
+        if matcher := resolvers[resolver]:
             resolvers[resolver].destroy()
             logger.info(f"解析器 {resolver} 已销毁")
 
