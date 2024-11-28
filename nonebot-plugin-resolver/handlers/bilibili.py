@@ -84,7 +84,7 @@ async def bilibili_handler(bot: Bot, event: Event) -> None:
     # 直播间识别
     if 'live' in url:
         # https://live.bilibili.com/30528999?hotRank=0
-        room_id = re.search(r'\/(\d+)$', url).group(1)
+        room_id = re.search(r'\/(\d+)', url).group(1)
         room = live.LiveRoom(room_display_id=int(room_id))
         room_info = (await room.get_room_info())['room_info']
         title, cover, keyframe = room_info['title'], room_info['cover'], room_info['keyframe']
