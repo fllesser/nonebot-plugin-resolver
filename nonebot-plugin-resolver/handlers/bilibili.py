@@ -122,8 +122,10 @@ async def bilibili_handler(bot: Bot, event: Event) -> None:
     will_delete_id: int = (await bilibili.send(f'{GLOBAL_NICKNAME}识别：哔哩哔哩, 解析中.....'))["message_id"]
     video_id = re.search(r"video\/[^\?\/ ]+", url)[0].split('/')[1]
     if "av" in video_id:
-        video_id = av_to_bv(int(video_id.split('av')[1]))
-    v = video.Video(video_id, credential=bili_credential)
+        v = video.Video(aid=int(video_id.split("av")[1]), credential=bili_credential)
+        url = f"http://www.bilibili.com/video/{v.get_bvid()}"
+    else:
+        v = video.Video(bvid=video_id, credential=bili_credential)
     try:
         video_info = await v.get_info()
     except Exception as e:
