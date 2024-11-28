@@ -123,7 +123,6 @@ async def bilibili_handler(bot: Bot, event: Event) -> None:
     video_id = re.search(r"video\/[^\?\/ ]+", url)[0].split('/')[1]
     if "av" in video_id:
         v = video.Video(aid=int(video_id.split("av")[1]), credential=bili_credential)
-        url = f"http://www.bilibili.com/video/{v.get_bvid()}"
     else:
         v = video.Video(bvid=video_id, credential=bili_credential)
     try:
