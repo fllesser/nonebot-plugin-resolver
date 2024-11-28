@@ -71,9 +71,10 @@ DOUYIN_CK='' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=
 IS_OVERSEA=False # 是否是海外服务器部署
 RESOLVER_PROXY = "http://127.0.0.1:7890" # 代理
 R_GLOBAL_NICKNAME="" # 解析前缀名
-BILI_SESSDATA='' # bilibili sessdata 填写后可附加: 总结等功能
+ytb_ck='' # youtube cookie, youtube 视频因人机检测下载失败，可填写
+bili_ck='' # bilibili cookie, 必须含有 sessdata 项 填写后可附加: 总结，最高画质视频下载
 VIDEO_DURATION_MAXIMUM=480 # 视频最大解析长度，默认480s为8分钟，计算公式为480s/60s=8mins
-GLOBAL_RESOLVE_CONTROLLER="" # 全局禁止的解析，示例 GLOBAL_RESOLVE_CONTROLLER="bilibili,dy" 表示禁止了哔哩哔哩和抖，GLOBAL_RESOLVE_CONTROLLER=""说明都不禁止，（大部分是缩写）请严格遵守选项: bilibili,dy,tiktok,ac,twitter,xiaohongshu,youtube.netease,kugou,wb
+black_resolvers=[] # 全局禁止的解析，示例 GLOBAL_RESOLVE_CONTROLLER="bilibili,dy" 表示禁止了哔哩哔哩和抖，black_resolvers=""说明都不禁止，请严格遵守选项: bilibili,douyin,tiktok,acfun,twitter,xhs,ytb.ncm,kugou,weibo,kugou
 ```
 
 ## 🕹️ 开启 & 关闭解析
@@ -91,9 +92,6 @@ GLOBAL_RESOLVE_CONTROLLER="" # 全局禁止的解析，示例 GLOBAL_RESOLVE_CON
 
 https://github.com/user-attachments/assets/7ead6d62-a36c-4e8d-bb5d-6666749dfb26
 
-## youtube 解析可能存在的问题
-- 网络问题, 自行解决
-- 解析失败可能是因为人机检测，建议先自行使用 `yt-dlp` 测试，确定后将 youtube 的 cookies 以 **Netscape** 的格式导出为 `ytb_cookies.txt`，放到 nonebot 工作目录
 
 ## 🎉 使用 & 效果图
 <img src="https://s2.loli.net/2024/08/12/l8ISa1Gv76OHuML.webp" width="50%" height="50%">
