@@ -37,5 +37,5 @@ HEIGHT: int = rconfig.max_video_height
 # format config
 ytb_cookies_file = (rpath / 'cookie' / 'ytb_cookies.txt').absolute()
 bili_cookies_file = (rpath / 'cookie' / 'bili_cookies.txt').absolute()
-bili_credential: str = ''
+bili_credential: Credential = None
 
