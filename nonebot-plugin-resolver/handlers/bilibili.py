@@ -13,7 +13,7 @@ from json.decoder import JSONDecodeError
 from .utils import *
 
 from ..constants import BILIBILI_HEADER
-from ..core.bili23 import extra_bili_info, av_to_bv
+from ..core.bili23 import extra_bili_info
 from ..core.ytdlp import ytdlp_download_video
 from ..core.common import delete_boring_characters
 
