@@ -20,17 +20,21 @@ driver = get_driver()
 @driver.on_startup
 async def _():
     if rconfig.bili_ck:
-        bili_credential = Credential.from_cookies(cookies_str_to_dict(rconfig.bili_ck))
-        logger.info(f"bilibili credential format sucess: {bili_credential}")
+        # check sesdata
+        cookie_dict = cookies_str_to_dict(rconfig.bili_ck)
+        bili_credential = Credential.from_cookies(cookie_dict)
+        if cookie_dict["SESSDATA"]:
+            logger.info(f"bilibili credential format sucess from cookie")
+        else:
+            logger.error(f"配置的 bili_ck 未包含 SESSDATA 项，可能无效")
         # save_cookies_to_netscape(rconfig.bili_ck, bili_cookies_file, 'bilibili.com')
     if rconfig.ytb_ck:
         save_cookies_to_netscape(rconfig.ytb_ck, ytb_cookies_file, 'youtube.com')
     # 处理黑名单 resovler
     for resolver in rconfig.black_resolvers:
-        matcher = resolvers[resolver]
-        if matcher:
+        if matcher := resolvers[resolver]
             resolvers[resolver].destroy()
-            logger.info(f"matcher {resolver} was destroyed")
+            logger.info(f"解析器 {resolver} 已销毁")
     for m in controllers:
         pass
 
@@ -56,9 +60,7 @@ def save_cookies_to_netscape(cookies_str, file_path, domain):
 
     # 保存 cookies 到文件
     cj.save(ignore_discard=True, ignore_expires=True)
-
-    # 验证保存的 cookies
-    logger.info(f"cookies saved to {file_path}")
+    logger.info(f"{file_path} saved sucessfully")
 
 def cookies_str_to_dict(cookies_str: str) -> dict[str, str]:
     res = {}
