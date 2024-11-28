@@ -1,3 +1,4 @@
+from nonebot import logger
 from nonebot import get_driver
 from nonebot.plugin import PluginMetadata
 
