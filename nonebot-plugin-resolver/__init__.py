@@ -35,9 +35,6 @@ async def _():
         if matcher := resolvers[resolver]
             resolvers[resolver].destroy()
             logger.info(f"解析器 {resolver} 已销毁")
-    for m in controllers:
-        pass
-
 
 def save_cookies_to_netscape(cookies_str, file_path, domain):
     # 先检测目录是否存在
