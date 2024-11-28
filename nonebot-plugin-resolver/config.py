@@ -47,7 +47,7 @@ def format_cookies():
         else:
             logger.error(f"配置的 bili_ck 未包含 SESSDATA 项，可能无效")
         # save_cookies_to_netscape(rconfig.bili_ck, bili_cookies_file, 'bilibili.com')
-   if rconfig.ytb_ck:
+    if rconfig.ytb_ck:
         save_cookies_to_netscape(rconfig.ytb_ck, ytb_cookies_file, 'youtube.com')
 
 def save_cookies_to_netscape(cookies_str, file_path, domain):
