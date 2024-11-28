@@ -41,6 +41,7 @@ bili_credential: Credential = None
 def format_cookies():
     if rconfig.bili_ck:
         cookie_dict = cookies_str_to_dict(rconfig.bili_ck)
+        global bili_credential
         bili_credential = Credential.from_cookies(cookie_dict)
         if cookie_dict["SESSDATA"]:
             logger.info(f"bilibili credential format sucess from cookie")
