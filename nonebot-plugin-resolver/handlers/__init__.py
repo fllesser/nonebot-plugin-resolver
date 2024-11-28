@@ -13,4 +13,4 @@ from .filter import enable_resolve, disable_resolve,check_resolve
 
 resolvers = {"bilibili": bilibili, "douyin": douyin, "tiktok": tiktok, "acfun": acfun,
               "twitter": twitter, "xhs": xhs, "ytb": ytb, "ncm": ncm, "weibo": weibo, "kugou": kugou}
-
+contollers = [enable_resolve, disable_resolve, check_resolve]
