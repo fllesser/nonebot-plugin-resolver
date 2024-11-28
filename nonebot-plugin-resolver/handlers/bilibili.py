@@ -7,13 +7,14 @@ from nonebot.adapters.onebot.v11 import Message, Event, Bot, MessageSegment
 from bilibili_api import video, live, article
 from bilibili_api.favorite_list import get_video_favorite_list_content
 from bilibili_api.opus import Opus
+from bilibili_api.video import VideoDownloadURLDataDetecter
 from urllib.parse import parse_qs, urlparse
 from json.decoder import JSONDecodeError
 
 from .utils import *
 
 from ..constants import BILIBILI_HEADER
-from ..core.bili23 import extra_bili_info
+from ..core.bili23 import download_b_file, merge_file_to_mp4, extra_bili_info
 from ..core.ytdlp import ytdlp_download_video
 from ..core.common import delete_boring_characters
 
@@ -163,12 +164,23 @@ async def bilibili_handler(bot: Bot, event: Event) -> None:
     else:
         # 下载视频和音频
         try:
-            video_path = await ytdlp_download_video(
-                url = url, path = (rpath / 'temp').absolute(), type = 'bilibili', cookiefile=bili_cookies_file)
-            if video_path.endswith('mp4'):
-                segs.append(await get_video_seg(video_path))
-            else:
-                segs.append(Message(f"视频下载失败，错误：{video_path}"))
+            download_url_data = await v.get_download_url(page_index=page_num)
+            detecter = VideoDownloadURLDataDetecter(download_url_data)
+            streams = detecter.detect_best_streams()
+            video_url, audio_url = streams[0].url, streams[1].url
+            # 下载视频和音频
+            path = (rpath / "temp" / "video_id").absolute()
+            await asyncio.gather(
+                    download_b_file(video_url, f"{path}-video.m4s", logger.info),
+                    download_b_file(audio_url, f"{path}-audio.m4s", logger.info))
+            await merge_file_to_mp4(f"{path}-video.m4s", f"{path}-audio.m4s", f"{path}-res.mp4")
+            segs.append(await get_video_seg(f"{path}-res.mp4"))
+            # video_path = await ytdlp_download_video(
+            #     url = url, path = (rpath / 'temp').absolute(), type = 'bilibili', cookiefile=bili_cookies_file)
+            # if video_path.endswith('mp4'):
+            #     segs.append(await get_video_seg(video_path))
+            # else:
+            #     segs.append(Message(f"视频下载失败，错误：{video_path}"))
         except Exception as e:
             logger.error(f"下载视频失败，错误为\n{e}")
             segs.append(Message(f"下载视频失败，错误为\n{e}"))
