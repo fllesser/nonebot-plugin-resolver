@@ -1,6 +1,7 @@
 from nonebot.plugin import PluginMetadata
 
-from .handlers import resolvers
+from .handlers import resolvers, controllers
+
 from .config import Config, rconfig
 
 
@@ -18,3 +19,5 @@ __plugin_meta__ = PluginMetadata(
 if rconfig.black_resolvers:
     for resolver in rconfig.black_resolvers:
         resolvers[resolver].destroy()
+
+controllers.append(None)
