@@ -1,5 +1,6 @@
 import re
 import httpx
+import asyncio
 
 from nonebot import on_regex
 from nonebot.adapters.onebot.v11 import Message, Event, Bot, MessageSegment
