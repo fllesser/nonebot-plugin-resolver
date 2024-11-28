@@ -74,3 +74,25 @@ def extra_bili_info(video_info):
         video_info_result += f"{key}: {formatted_value} | "
 
     return video_info_result
+
+
+
+
+    tr[table[i]]=i
+s=[11,10,3,8,4,6]
+xor=177451812
+add=8728348608
+
+def av_to_bv(x: int) -> str:
+    table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+    tr = {}
+    for i in range(58):
+        tr[table[i]]=i
+    s = [11,10,3,8,4,6]
+    xor = 177451812
+    add = 8728348608
+    x=(x ^ xor) + add
+    r= list('BV1  4 1 7  ')
+    for i in range(6):
+        r[s[i]]=table[x//58**i%58]
+    return ''.join(r)

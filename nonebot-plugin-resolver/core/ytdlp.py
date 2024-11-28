@@ -14,7 +14,7 @@ async def get_video_title(url: str, cookiefile: str = '', proxy: str = '') -> st
     if proxy:
         ydl_opts['proxy'] = proxy
     if cookiefile:
-        ydl_opts['cookiefile'] = f"data/nonebot-plugin-resolver/cookie/{cookiefile}"
+        ydl_opts['cookiefile'] = cookiefile
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -34,7 +34,7 @@ async def ytdlp_download_video(url: str, path: str, type: str, height: int = 108
     if proxy:
         ydl_opts['proxy'] = proxy
     if cookiefile:
-        ydl_opts['cookiefile'] = f"data/nonebot-plugin-resolver/cookie/{cookiefile}"
+        ydl_opts['cookiefile'] = cookiefile
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
