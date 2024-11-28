@@ -17,7 +17,7 @@ __plugin_meta__ = PluginMetadata(
 
 driver = get_driver()
 
-@driver.on_startup()
+@driver.on_startup
 async def _():
     if rconfig.bili_ck:
         bili_credential = Credential.from_cookies(cookies_str_to_dict(rconfig.bili_ck))
