@@ -74,7 +74,7 @@ R_GLOBAL_NICKNAME="" # 解析前缀名
 ytb_ck='' # youtube cookie, youtube 视频因人机检测下载失败，可填写
 bili_ck='' # bilibili cookie, 必须含有 sessdata 项 填写后可附加: 总结，最高画质视频下载
 VIDEO_DURATION_MAXIMUM=480 # 视频最大解析长度，默认480s为8分钟，计算公式为480s/60s=8mins
-black_resolvers=[] # 全局禁止的解析，示例 GLOBAL_RESOLVE_CONTROLLER="bilibili,dy" 表示禁止了哔哩哔哩和抖，black_resolvers=""说明都不禁止，请严格遵守选项: bilibili,douyin,tiktok,acfun,twitter,xhs,ytb.ncm,kugou,weibo,kugou
+black_resolvers=[] # 全局禁止的解析，示例 GLOBAL_RESOLVE_CONTROLLER=["bilibili", "dy"] 表示禁止了哔哩哔哩和抖，black_resolvers=""说明都不禁止，请严格遵守选项: bilibili,douyin,tiktok,acfun,twitter,xhs,ytb.ncm,kugou,weibo,kugou
 ```
 
 ## 🕹️ 开启 & 关闭解析
