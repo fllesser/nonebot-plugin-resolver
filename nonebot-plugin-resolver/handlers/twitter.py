@@ -4,7 +4,7 @@ from nonebot import on_regex
 from nonebot.adapters.onebot.v11 import Message, Event, Bot
 from nonebot import logger
 
-from .filter import resolve_handler
+from .filter import resolve_filter
 from .utils import send_forward_both, auto_determine_send_type
 from ..constants.common import COMMON_HEADER, GENERAL_REQ_LINK
 from ..core.common import download_img, download_video
@@ -16,7 +16,7 @@ twitter = on_regex(
 )
 
 @twitter.handle()
-@resolve_handler
+@resolve_filter
 async def twitter_handler(bot: Bot, event: Event):
     """
         X解析
@@ -53,7 +53,7 @@ async def twitter_handler(bot: Bot, event: Event):
 
     x_url_res = x_data['url']
 
-    await twitter.send(Message(f"{GLOBAL_NICKNAME}识别：小蓝鸟学习版"))
+    await twitter.send(Message(f"{NICKNAME}识别 | 小蓝鸟学习版"))
 
     # 图片
     if x_url_res.endswith(".jpg") or x_url_res.endswith(".png"):

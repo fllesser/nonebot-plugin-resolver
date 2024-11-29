@@ -16,13 +16,10 @@ async def get_video_title(url: str, cookiefile: str = '', proxy: str = '') -> st
     if cookiefile:
         ydl_opts['cookiefile'] = cookiefile
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = await asyncio.to_thread(ydl.extract_info, url, download=False)
-            return info_dict.get('title', '')
-    except Exception as e:
-        logger.error(e)
-        return ''
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.extract_info
+        info_dict = await asyncio.to_thread(ydl.extract_info, url, download=False)
+        return info_dict.get('title', '')
         
 async def ytdlp_download_video(url: str, path: str, type: str, height: int = 1080, cookiefile: str = '', proxy: str = '') -> str:
     filename = f"{path}/{type}-{random.randint(1, 10000)}"
@@ -36,15 +33,9 @@ async def ytdlp_download_video(url: str, path: str, type: str, height: int = 108
     if cookiefile:
         ydl_opts['cookiefile'] = cookiefile
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            await asyncio.to_thread(ydl.download, [url])
-        return f'{filename}.mp4'
-      
-    except Exception as e:
-        logger.error(e)
-        return f'{e}'
-        
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        await asyncio.to_thread(ydl.download, [url])
+    return f'{filename}.mp4'
         
 
 

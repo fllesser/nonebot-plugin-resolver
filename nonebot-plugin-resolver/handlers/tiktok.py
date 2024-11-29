@@ -3,7 +3,7 @@ import re, httpx
 from nonebot import on_regex
 from nonebot.adapters.onebot.v11 import Event, Message
 
-from .filter import resolve_handler
+from .filter import resolve_filter
 from .utils import auto_video_send
 from ..core.ytdlp import get_video_title, ytdlp_download_video
 
@@ -14,7 +14,7 @@ tiktok = on_regex(
 )
 
 @tiktok.handle()
-@resolve_handler
+@resolve_filter
 async def tiktok_handler(event: Event) -> None:
     """
         tiktok解析
@@ -40,16 +40,16 @@ async def tiktok_handler(event: Event) -> None:
         # logger.info(url)
     else:
         url = re.search(url_reg, url)[0]
-    title = await get_video_title(url = url, proxy = PROXY)
-    if not title:
-        title ="网络繁忙，获取标题失败"
-    await tiktok.send(Message(f"{GLOBAL_NICKNAME}识别：TikTok - {title}"))
-
-    video_path = await ytdlp_download_video(
-        url = url, path = (rpath / 'temp').absolute(), type = 'tiktok', proxy = PROXY)
-    if video_path:
+    try:
+        title = await get_video_title(url = url, proxy = PROXY)
+        await tiktok.send(Message(f"{NICKNAME}识别 | TikTok - {title}"))
+    except Exception as e:
+        await tiktok.send(Message(f"{NICKNAME}识别 | TikTok - 标题获取出错: {e}"))
+    try:
+        video_path = await ytdlp_download_video(
+            url = url, path = (RPATH / 'temp').absolute(), type = 'tiktok', proxy = PROXY)
         await auto_video_send(event, video_path)
-    else:
-        await tiktok.finish("网络繁忙，下载视频出错")
+    except Exception as e:
+        await tiktok.send(f"视频下载失败 | {e}")
 
 

@@ -3,16 +3,14 @@ import httpx
 import aiohttp
 
 from nonebot import on_regex
-from nonebot import on_regex, on_command, get_plugin_config
 from nonebot.adapters.onebot.v11 import Message, Event, Bot, MessageSegment
 
 from .utils import *
+from .filter import resolve_filter
 from ..core.tiktok import generate_x_bogus_url
 from ..constants.tiktok import DOUYIN_VIDEO, DY_TOUTIAO_INFO, URL_TYPE_CODE_DICT
 from ..constants.common import COMMON_HEADER
 
-
-from .filter import resolve_handler
 from ..config import *
 
 douyin = on_regex(
@@ -20,7 +18,7 @@ douyin = on_regex(
 )
 
 @douyin.handle()
-@resolve_handler
+@resolve_filter
 async def douyin_handler(bot: Bot, event: Event) -> None:
     """
         抖音解析
@@ -41,10 +39,10 @@ async def douyin_handler(bot: Bot, event: Event) -> None:
     dou_id = re.search(reg2, dou_url_2, re.I)[2]
     # logger.info(dou_id)
     # 如果没有设置dy的ck就结束，因为获取不到
-    douyin_ck = rconfig.douyin_ck
+    douyin_ck = RCONFIG.r_douyin_ck
     if douyin_ck == "":
-        logger.error(rconfig)
-        await douyin.send(Message(f"{GLOBAL_NICKNAME}识别：抖音，无法获取到管理员设置的抖音ck！"))
+        logger.error(RCONFIG)
+        await douyin.send(Message(f"{NICKNAME}识别 | 抖音，无法获取到管理员设置的抖音ck！"))
         return
     # API、一些后续要用到的参数
     headers = {
@@ -58,14 +56,14 @@ async def douyin_handler(bot: Bot, event: Event) -> None:
         async with session.get(api_url, headers=headers, timeout=10) as response:
             detail = await response.json()
             if detail is None:
-                await douyin.send(Message(f"{GLOBAL_NICKNAME}识别：抖音，解析失败！"))
+                await douyin.send(Message(f"{NICKNAME}识别 | 抖音，解析失败！"))
                 return
             # 获取信息
             detail = detail['aweme_detail']
             # 判断是图片还是视频
             url_type_code = detail['aweme_type']
             url_type = URL_TYPE_CODE_DICT.get(url_type_code, 'video')
-            await douyin.send(Message(f"{GLOBAL_NICKNAME}识别：抖音，{detail.get('desc')}"))
+            await douyin.send(Message(f"{NICKNAME}识别 | 抖音，{detail.get('desc')}"))
             # 根据类型进行发送
             if url_type == 'video':
                 # 识别播放地址

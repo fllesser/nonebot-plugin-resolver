@@ -1,10 +1,10 @@
-from nonebot import logger
-from nonebot import get_driver
+from nonebot import get_driver, logger
 from nonebot.plugin import PluginMetadata
+from bilibili_api import Credential
 
 from .handlers import resolvers, controllers
-from .config import Config, rconfig, format_cookies
-
+from .config import *
+from .cookie import *
 
 __plugin_meta__ = PluginMetadata(
     name="链接分享解析器",
@@ -20,10 +20,19 @@ driver = get_driver()
 
 @driver.on_startup
 async def _():
-    format_cookies()
+    if RCONFIG.r_bili_ck:
+        pass
+        # cookie_dict = cookies_str_to_dict(RCONFIG.r_bili_ck)
+        # if cookie_dict["SESSDATA"]:
+        #     logger.info(f"bilibili credential format sucess from cookie")
+        # else:
+        #     logger.error(f"配置的 bili_ck 未包含 SESSDATA 项，可能无效")
+        # save_cookies_to_netscape(RCONFIG.bili_ck, bili_cookies_file, 'bilibili.com')
+    if RCONFIG.r_ytb_ck:
+        save_cookies_to_netscape(RCONFIG.r_ytb_ck, YTB_COOKIES_FILE, 'youtube.com')
     # 处理黑名单 resovler
-    for resolver in rconfig.black_resolvers:
+    for resolver in RCONFIG.r_black_resolvers:
         if matcher := resolvers[resolver]:
-            resolvers[resolver].destroy()
+            matcher.destroy()
             logger.info(f"解析器 {resolver} 已销毁")
 

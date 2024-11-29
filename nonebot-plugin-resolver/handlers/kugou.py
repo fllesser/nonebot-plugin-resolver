@@ -8,14 +8,14 @@ from ..core.common import download_audio
 from ..constants.kugou import KUGOU_TEMP_API
 from ..constants.common import COMMON_HEADER
 
-from .filter import resolve_handler
+from .filter import resolve_filter
 from ..config import *
 
 
 kugou = on_regex(r"(kugou.com)")
 
 @kugou.handle()
-@resolve_handler
+@resolve_filter
 async def kugou_handler(bot: Bot, event: Event):
     message = str(event.message)
     # logger.info(message)
@@ -32,7 +32,7 @@ async def kugou_handler(bot: Bot, event: Event):
             if match:
                 get_url = match.group(1)
             else:
-                await kugou.send(Message(f"{GLOBAL_NICKNAME}\n来源：【酷狗音乐】\n获取链接失败"))
+                await kugou.send(Message(f"{NICKNAME}\n识别 | 酷狗音乐 - 获取链接失败"))
                 get_url = None
                 return
         if get_url:
@@ -57,7 +57,7 @@ async def kugou_handler(bot: Bot, event: Event):
             kugou_singer = kugou_vip_data.get('singer')
             await kugou.send(Message(
                 [MessageSegment.image(kugou_cover),
-                 MessageSegment.text(f'{GLOBAL_NICKNAME}\n来源：【酷狗音乐】\n歌曲：{kugou_name}-{kugou_singer}')]))
+                 MessageSegment.text(f'{NICKNAME}\n识别 | 酷狗音乐 - 歌曲：{kugou_name}-{kugou_singer}')]))
             # 下载音频文件后会返回一个下载路径
             kugou_music_path = await download_audio(kugou_url)
             # 发送语音
@@ -68,6 +68,6 @@ async def kugou_handler(bot: Bot, event: Event):
             if os.path.exists(kugou_music_path):
                 os.unlink(kugou_music_path)
         else:
-            await kugou.send(Message(f"{GLOBAL_NICKNAME}\n来源：【酷狗音乐】\n不支持当前外链，请重新分享再试"))
+            await kugou.send(Message(f"{NICKNAME}识别 | 酷狗音乐 - 不支持当前外链，请重新分享再试"))
     else:
-        await kugou.send(Message(f"{GLOBAL_NICKNAME}\n来源：【酷狗音乐】\n获取链接失败"))
+        await kugou.send(Message(f"{NICKNAME}来识别 | 酷狗音乐 - 获取链接失败"))

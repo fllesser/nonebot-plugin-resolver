@@ -56,26 +56,23 @@ sudo apt-get install ffmpeg
 > - https://github.com/yt-dlp/FFmpeg-Builds
 > - https://github.com/BtbN/FFmpeg-Builds
 
-5. 【可选】安装`TikTok`&`YouTube`解析必要依赖 不建议直接使用`apt`不是最新版
-
+5. 抖音解析需要 JavaScript Runtime
 ```shell
-pip install yt-dlp
+sudo apt-get install nodejs
 ```
 ## ⚙️ 配置
 
 在 nonebot2 项目的`.env`文件中添加下表中的可选配置
 
 ```
-XHS_CK='' #xhs cookie
-DOUYIN_CK='' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
-IS_OVERSEA=False # 是否是海外服务器部署
-RESOLVER_PROXY = "http://127.0.0.1:7890" # 代理
-R_GLOBAL_NICKNAME="" # 解析前缀名
-ytb_ck='' # youtube cookie, youtube 视频因人机检测下载失败，可填写
-bili_ck='' # bilibili cookie, 必须含有 sessdata 项 填写后可附加: 总结，最高画质视频下载
-VIDEO_DURATION_MAXIMUM=480 # 视频最大解析长度，默认480s为8分钟，计算公式为480s/60s=8mins
-black_resolvers=[] # 全局禁止的解析，示例 GLOBAL_RESOLVE_CONTROLLER=["bilibili", "dy"] 表示禁止了哔哩哔哩和抖，black_resolvers=""说明都不禁止，请严格遵守选项: bilibili,douyin,tiktok,acfun,twitter,xhs,ytb.ncm,kugou,weibo,kugou
-```
+r_xhs_ck=''                      # 小红书 cookie
+r_douyin_ck=''                   # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
+r_bili_ck= ''                    # bilibili cookie, 必须含有 SESSDATA 项 填写后可附加: 总结
+r_ytb_ck=''                      # youtube cookie, youtube 视频因人机检测下载失败，可填写
+r_is_oversea=False               # 海外服务器部署，使用了透明代理，设置为 True
+r_proxy='http://127.0.0.1:7890'  # 代理 r_is_oversea=False 时生效
+r_video_duration_maximum=480     # 视频最大解析长度，默认480s为8分钟，计算公式为480s/60s=8mins
+r_black_resolvers=[]             # 全局禁止的解析，示例 GLOBAL_RESOLVE_CONTROLLER=["bilibili", "douyin"] 表示禁止了哔哩哔哩和抖 bilibili,douyin,tiktok,acfun,twitter,xhs,ytb.ncm,kugou,weibo,kugou
 
 ## 🕹️ 开启 & 关闭解析
 

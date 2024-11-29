@@ -19,7 +19,7 @@ enable_resolve = on_command('开启解析', rule=to_me(), permission=GROUP_ADMIN
 disable_resolve = on_command('关闭解析', rule=to_me(), permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER)
 check_resolve = on_command('查看关闭解析', permission=SUPERUSER)
 
-def resolve_handler(func):
+def resolve_filter(func):
     """
     解析控制装饰器
     :param func:

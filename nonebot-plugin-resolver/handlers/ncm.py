@@ -1,10 +1,10 @@
 import re
 import httpx
 
-from nonebot import on_regex, on_command, get_plugin_config
+from nonebot import on_regex
 from nonebot.adapters.onebot.v11 import Message, Event, Bot, MessageSegment
 
-from .filter import resolve_handler
+from .filter import resolve_filter
 from .utils import *
 from ..constants import COMMON_HEADER, NETEASE_API_CN, NETEASE_TEMP_API
 from ..core.common import download_audio
@@ -15,7 +15,7 @@ ncm = on_regex(
 )
 
 @ncm.handle()
-@resolve_handler
+@resolve_filter
 async def ncm_handler(bot: Bot, event: Event):
     message = str(event.message)
     # 识别短链接
@@ -25,7 +25,7 @@ async def ncm_handler(bot: Bot, event: Event):
 
     ncm_id = re.search(r"id=(\d+)", message).group(1)
     if ncm_id is None:
-        await ncm.finish(Message(f"❌ {GLOBAL_NICKNAME}识别：网易云，获取链接失败"))
+        await ncm.finish(Message(f"❌ {NICKNAME}识别 | 网易云 - 获取链接失败"))
     # 拼接获取信息的链接
     ncm_detail_url = f'{NETEASE_API_CN}/song/detail?ids={ncm_id}'
     ncm_detail_resp = httpx.get(ncm_detail_url, headers=COMMON_HEADER)
@@ -38,7 +38,7 @@ async def ncm_handler(bot: Bot, event: Event):
     ncm_url = ncm_vip_data['mp3']
     ncm_cover = ncm_vip_data['img']
     await ncm.send(Message(
-        [MessageSegment.image(ncm_cover), MessageSegment.text(f'{GLOBAL_NICKNAME}识别：网易云音乐，{ncm_title}')]))
+        [MessageSegment.image(ncm_cover), MessageSegment.text(f'{NICKNAME}识别 | 网易云音乐 - {ncm_title}')]))
     # 下载音频文件后会返回一个下载路径
     ncm_music_path = await download_audio(ncm_url)
     # 发送语音

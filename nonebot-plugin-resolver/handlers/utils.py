@@ -7,10 +7,9 @@ from nonebot.adapters.onebot.v11 import Message, Event, Bot, MessageSegment, GRO
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent, PrivateMessageEvent
 from nonebot.matcher import current_bot
 
-
 from ..constants.common import VIDEO_MAX_MB
 from ..core.common import download_video, get_file_size_mb
-from ..config import GLOBAL_NICKNAME
+from ..config import *
 
 def auto_determine_send_type(user_id: int, task: str) -> MessageSegment:
     """
@@ -20,10 +19,10 @@ def auto_determine_send_type(user_id: int, task: str) -> MessageSegment:
     :return:
     """
     if task.endswith("jpg") or task.endswith("png"):
-        return MessageSegment.node_custom(user_id=user_id, nickname=GLOBAL_NICKNAME,
+        return MessageSegment.node_custom(user_id=user_id, nickname=NICKNAME,
                                           content=Message(MessageSegment.image(task)))
     elif task.endswith("mp4"):
-        return MessageSegment.node_custom(user_id=user_id, nickname=GLOBAL_NICKNAME,
+        return MessageSegment.node_custom(user_id=user_id, nickname=NICKNAME,
                                           content=Message(MessageSegment.video(task)))
 
 
@@ -36,9 +35,9 @@ def make_node_segment(user_id, segments: Union[MessageSegment, List]) -> Union[
     :return:
     """
     if isinstance(segments, list):
-        return [MessageSegment.node_custom(user_id=user_id, nickname=GLOBAL_NICKNAME,
+        return [MessageSegment.node_custom(user_id=user_id, nickname=NICKNAME,
                                            content=Message(segment)) for segment in segments]
-    return MessageSegment.node_custom(user_id=user_id, nickname=GLOBAL_NICKNAME,
+    return MessageSegment.node_custom(user_id=user_id, nickname=NICKNAME,
                                       content=Message(segments))
 
 
@@ -133,7 +132,6 @@ async def get_video_seg(data_path: str) -> MessageSegment:
         # 如果data以"http"开头，先下载视频
         if data_path is not None and data_path.startswith("http"):
             data_path = await download_video(data_path)
-            
 
         # 检测文件大小
         file_size_in_mb = get_file_size_mb(data_path)

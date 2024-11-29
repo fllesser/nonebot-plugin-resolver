@@ -4,7 +4,7 @@ from nonebot import on_regex
 from nonebot.adapters.onebot.v11 import Message, Event, Bot, MessageSegment
 from nonebot import logger
 
-from .filter import resolve_handler
+from .filter import resolve_filter
 from .utils import auto_video_send, make_node_segment, send_forward_both
 from ..constants.common import COMMON_HEADER
 from ..constants.weibo import WEIBO_SINGLE_INFO
@@ -19,7 +19,7 @@ weibo = on_regex(
 
 
 @weibo.handle()
-@resolve_handler
+@resolve_filter
 async def weibo_handler(bot: Bot, event: Event):
     message = str(event.message)
     weibo_id = None
@@ -59,7 +59,7 @@ async def weibo_handler(bot: Bot, event: Event):
 
     # 无法获取到id则返回失败信息
     if not weibo_id:
-        await weibo.finish(Message("解析失败：无法获取到wb的id"))
+        await weibo.finish(Message("解析失败：无法获取到微博的 id"))
     # 最终获取到的 id
     weibo_id = weibo_id.split("/")[1] if "/" in weibo_id else weibo_id
     logger.info(weibo_id)
@@ -77,7 +77,7 @@ async def weibo_handler(bot: Bot, event: Event):
     # 发送消息
     await weibo.send(
         Message(
-            f"{GLOBAL_NICKNAME}识别：微博，{re.sub(r'<[^>]+>', '', text)}\n{status_title}\n{source}\t{region_name if region_name else ''}"))
+            f"{NICKNAME}识别 | 微博 - {re.sub(r'<[^>]+>', '', text)}\n{status_title}\n{source}\t{region_name if region_name else ''}"))
     if pics:
         pics = map(lambda x: x['url'], pics)
         download_img_funcs = [asyncio.create_task(download_img(item, '', headers={
