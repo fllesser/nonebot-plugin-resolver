@@ -27,7 +27,7 @@ async def xhs_handler(bot: Bot, event: Event):
     :return:
     """
     msg_url = re.search(r"(http:|https:)\/\/(xhslink|(www\.)xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*",
-                        str(event.message).strip())[0]
+                        str(event.message).replace("&amp;", "&").strip())[0]
     # 如果没有设置xhs的ck就结束，因为获取不到
     xhs_ck = RCONFIG.r_xhs_ck
     if xhs_ck == "":
