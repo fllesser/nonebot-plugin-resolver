@@ -56,7 +56,11 @@ async def bilibili_handler(bot: Bot, event: Event) -> None:
         resp = httpx.get(b_short_url, headers=BILIBILI_HEADER, follow_redirects=True)
         url: str = str(resp.url)
     else:
-        url: str = re.search(url_reg, url).group(0)
+        if match := re.search(url_seg, url):
+            url = match.group(0)
+        else:
+            # ignore link
+            return
     # ===============发现解析的是动态，转移一下===============
     if ('t.bilibili.com' in url or '/opus' in url) and BILI_CREDENTIAL:
         # 去除多余的参数
