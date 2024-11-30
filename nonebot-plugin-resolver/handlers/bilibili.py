@@ -56,7 +56,7 @@ async def bilibili_handler(bot: Bot, event: Event) -> None:
         resp = httpx.get(b_short_url, headers=BILIBILI_HEADER, follow_redirects=True)
         url: str = str(resp.url)
     else:
-        if match := re.search(url_seg, url):
+        if match := re.search(url_reg, url):
             url = match.group(0)
         else:
             # ignore link
