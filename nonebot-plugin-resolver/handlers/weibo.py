@@ -50,7 +50,11 @@ async def weibo_handler(bot: Bot, event: Event):
         match = re.search(r'(?<=mid=)[A-Za-z\d]+', message)
         if match:
             weibo_id = mid2id(match.group(0))
-
+    # 判断是否包含 "weibo.com/show" 且包含 "fid="
+    elif "weibo.com/show" in message and "fid=" in message:
+        # https://weibo.com/show?fid=1034:5007449447661594
+        match = re.search(r'(?<=fid=)[\d]+:[\d]+', message)
+        # 懒得写了
     # 判断是否包含 "weibo.com"
     elif "weibo.com" in message:
         # https://weibo.com/1707895270/5006106478773472

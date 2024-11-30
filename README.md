@@ -65,6 +65,8 @@ sudo apt-get install nodejs
 在 nonebot2 项目的`.env`文件中添加下表中的可选配置
 
 ```
+NICKNAME=[]                      # nonebot2 内置配置，设置可作为本插件的解析前缀
+
 r_xhs_ck=''                      # 小红书 cookie
 r_douyin_ck=''                   # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
 r_bili_ck= ''                    # bilibili cookie, 必须含有 SESSDATA 项 填写后可附加: 总结
